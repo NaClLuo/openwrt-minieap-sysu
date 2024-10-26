@@ -1,6 +1,6 @@
 include $(TOPDIR)/rules.mk
 
-PKG_NAME:=minieap-sysu
+PKG_NAME:=minieap
 PKG_VERSION:=0.93
 # PKG_RELEASE:=4
 PKG_MAINTAINER:=Xiao Li <xiaoli3397@gmail.com>
