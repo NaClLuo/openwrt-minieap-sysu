@@ -7,11 +7,11 @@ PKG_MAINTAINER:=Xiao Li <xiaoli3397@gmail.com>
 PKG_LICENSE:=GPLv3
 PKG_LICENSE_FILES:=LICENSE
 
+PKG_BUILD_DIR:=$(BUILD_DIR)/minieap-$(PKG_VERSION)
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/Undefined443/minieap-sysu.git
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
-PKG_SOURCE_VERSION:=v0.93
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
+PKG_SOURCE_VERSION:=v$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -21,6 +21,15 @@ define Package/$(PKG_NAME)
 	TITLE:=Extensible 802.1x client with Ruijie v3 (v4) plugin
 	MAINTAINER:=Undefined443
 	URL:=https://github.com/Undefined443/minieap-sysu
+endef
+
+define Package/$(PKG_NAME)/description
+	This is an EAP client that implements the SYSU custom EAP-MD5-Challenge algorithm.
+	It supports plug-in to modify the standard data package to authenticate the special server.
+endef
+
+define Package/$(PKG_NAME)/conffiles
+	/etc/minieap.conf
 endef
 
 define Package/$(PKG_NAME)/install
