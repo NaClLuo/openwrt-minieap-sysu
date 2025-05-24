@@ -40,10 +40,14 @@ minieap 的 SYSU 适配版，已在东校园至善园测试。目前稳定运行
    make package/minieap/compile V=s
    ```
 
-4. 在路由器上安装构建的软件包。
-
-   查找软件包位置：
+   查找编译产物位置：
 
    ```sh
    find . -name "minieap*.ipk"
+   ```
+
+4. 将编译得到的软件包上传到路由器，并安装：
+
+   ```sh
+   opkg install minieap*.ipk
    ```
