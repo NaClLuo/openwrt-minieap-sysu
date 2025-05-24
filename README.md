@@ -19,13 +19,31 @@ minieap 的 SYSU 适配版，已在东校园至善园测试。目前稳定运行
      texinfo uglifyjs upx-ucl unzip vim wget xmlto xxd zlib1g-dev zstd
    ```
 
-2. 下载对应路由器型号的 SDK [OpenWrt SDK](https://downloads.openwrt.org/)
+2. 下载对应路由器型号的 SDK：
 
-3. 编译
+   - [OpenWrt Firmware Selector](https://firmware-selector.openwrt.org/)
+   - [ImmortalWrt Firmware Selector](https://firmware-selector.immortalwrt.org/)
+
+   点击搜索结果下的文件夹图标，然后搜索 `sdk`，得到我们需要的 SDK 包，右键复制文件地址。
 
    ```sh
-   cd /path/to/your/sdk
+   wget https://downloads.immortalwrt.org/releases/24.10-SNAPSHOT/targets/mediatek/filogic/immortalwrt-sdk-24.10-SNAPSHOT-mediatek-filogic_gcc-13.3.0_musl.Linux-x86_64.tar.zst
+   tar --zstd -xf immortalwrt-sdk-*.tar.zst && rm immortalwrt-sdk-*.tar.zst
+   cd immortalwrt-sdk-*
+   ```
+
+3. 编译：
+
+   ```sh
    git clone https://github.com/Undefined443/openwrt-minieap-sysu package/minieap
    make menuconfig # choose `minieap` in section `Network`
    make package/minieap/compile V=s
+   ```
+
+4. 在路由器上安装构建的软件包。
+
+   查找软件包位置：
+
+   ```sh
+   find . -name "minieap*.ipk"
    ```
