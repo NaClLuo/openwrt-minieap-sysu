@@ -1,6 +1,6 @@
 # minieap for OpenWrt
 
-minieap 的 SYSU 适配版，已在东校园至善园测试。目前稳定运行一学期。
+minieap 的 SYSU 适配版，已在东校园至善园测试。目前稳定运行一学年。
 
 ## Build
 
