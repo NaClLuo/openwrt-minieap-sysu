@@ -1,6 +1,6 @@
 # minieap for OpenWrt
 
-minieap 的 SYSU 适配版，已在东校园至善园测试。目前稳定运行一学年。
+minieap 的中山大学适配版，已在东校园至善园稳定运行一学年。
 
 ## Build
 
@@ -55,7 +55,7 @@ minieap 的 SYSU 适配版，已在东校园至善园测试。目前稳定运行
 5. 启动：
 
    ```sh
-   minieap -u <your_username> -p <your_password> -n wan -w
+   minieap -u <username> -p <password> -n wan -w
    ```
 
 参见：[使用 minieap 实现路由器锐捷认证上网 | 博客园](https://www.cnblogs.com/Undefined443/p/18375072)
