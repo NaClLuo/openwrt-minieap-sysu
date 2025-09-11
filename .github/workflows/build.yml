@@ -11,14 +11,25 @@ jobs:
   build:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         target:
           - name: "MediaTek MT7622 (ImmortalWrt)"
             sdk_url: "https://downloads.immortalwrt.org/releases/24.10-SNAPSHOT/targets/mediatek/filogic/immortalwrt-sdk-24.10-SNAPSHOT-mediatek-filogic_gcc-13.3.0_musl.Linux-x86_64.tar.zst"
             sdk_extract: "immortalwrt-sdk-*"
+            arch: "mediatek-filogic"
           - name: "x86_64 (OpenWrt)" 
             sdk_url: "https://downloads.openwrt.org/snapshots/targets/x86/64/openwrt-sdk-x86-64_gcc-13.3.0_musl.Linux-x86_64.tar.xz"
             sdk_extract: "openwrt-sdk-*"
+            arch: "x86-64"
+          - name: "Ramips MT7621 (OpenWrt)"
+            sdk_url: "https://downloads.openwrt.org/snapshots/targets/ramips/mt7621/openwrt-sdk-ramips-mt7621_gcc-13.3.0_musl.Linux-x86_64.tar.xz"
+            sdk_extract: "openwrt-sdk-*"
+            arch: "ramips-mt7621"
+          - name: "ARMv8 Cortex-A53 (OpenWrt)"
+            sdk_url: "https://downloads.openwrt.org/snapshots/targets/bcm27xx/bcm2710/openwrt-sdk-bcm27xx-bcm2710_gcc-13.3.0_musl.Linux-x86_64.tar.xz"
+            sdk_extract: "openwrt-sdk-*"
+            arch: "bcm27xx-bcm2710"
 
     name: Build for ${{ matrix.target.name }}
     
@@ -48,16 +59,34 @@ jobs:
           python3-docutils python3-pyelftools qemu-utils re2c rsync scons squashfs-tools subversion swig \
           texinfo uglifyjs upx-ucl unzip vim wget xmlto xxd zlib1g-dev zstd
 
+    - name: Cache SDK
+      uses: actions/cache@v4
+      id: cache-sdk
+      with:
+        path: sdk-cache
+        key: sdk-${{ matrix.target.arch }}-${{ hashFiles('**/build.yml') }}
+        restore-keys: |
+          sdk-${{ matrix.target.arch }}-
+
     - name: Download and extract SDK
       run: |
-        echo "Downloading SDK: ${{ matrix.target.sdk_url }}"
-        wget "${{ matrix.target.sdk_url }}"
-        
-        # Extract based on file extension
-        if [[ "${{ matrix.target.sdk_url }}" == *.tar.zst ]]; then
-          tar --zstd -xf *.tar.zst && rm *.tar.zst
-        elif [[ "${{ matrix.target.sdk_url }}" == *.tar.xz ]]; then
-          tar -xf *.tar.xz && rm *.tar.xz
+        if [[ "${{ steps.cache-sdk.outputs.cache-hit }}" == "true" ]]; then
+          echo "Using cached SDK"
+          mv sdk-cache/* ./ || true
+        else
+          echo "Downloading SDK: ${{ matrix.target.sdk_url }}"
+          wget "${{ matrix.target.sdk_url }}"
+          
+          # Extract based on file extension
+          if [[ "${{ matrix.target.sdk_url }}" == *.tar.zst ]]; then
+            tar --zstd -xf *.tar.zst && rm *.tar.zst
+          elif [[ "${{ matrix.target.sdk_url }}" == *.tar.xz ]]; then
+            tar -xf *.tar.xz && rm *.tar.xz
+          fi
+          
+          # Cache the SDK for future runs
+          mkdir -p sdk-cache
+          cp -r ${{ matrix.target.sdk_extract }}/* sdk-cache/ || true
         fi
         
         # Enter SDK directory
@@ -98,6 +127,7 @@ jobs:
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: minieap-${{ matrix.target.name }}-${{ github.sha }}
+        name: minieap-${{ matrix.target.arch }}-${{ github.sha }}
         path: /tmp/artifacts/*.ipk
         if-no-files-found: error
+        retention-days: 30

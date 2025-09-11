@@ -1,8 +1,38 @@
 # minieap for OpenWrt
 
+![Build Status](https://github.com/NaClLuo/openwrt-minieap-sysu/actions/workflows/build.yml/badge.svg)
+
 minieap 的中山大学适配版，已在东校园至善园稳定运行一学年。
 
+## Automated Builds
+
+本仓库已配置自动化构建，支持多种路由器架构：
+
+- **MediaTek MT7622** (ImmortalWrt) - 适用于小米路由器 4、红米路由器 AC2100 等
+- **x86_64** (OpenWrt) - 适用于 PC 软路由、虚拟机等  
+- **Ramips MT7621** (OpenWrt) - 适用于小米路由器 3G、4A 千兆版等
+- **ARMv8 Cortex-A53** (OpenWrt) - 适用于树莓派 3B+ 等
+
+### 下载预编译包
+
+1. 访问 [Actions 页面](https://github.com/NaClLuo/openwrt-minieap-sysu/actions)
+2. 点击最新的成功构建
+3. 在 "Artifacts" 部分下载对应架构的 `.ipk` 文件
+4. 上传到路由器并安装：`opkg install minieap*.ipk`
+
+### 自动构建触发条件
+
+- 推送到 main/master 分支
+- 创建 Pull Request
+- 手动触发（Repository → Actions → Build minieap for OpenWrt → Run workflow）
+
 ## Build
+
+### 方式一：下载预编译包（推荐）
+
+见上方 [自动构建](#automated-builds) 部分，直接下载对应架构的预编译 `.ipk` 包。
+
+### 方式二：手动编译
 
 1. 安装依赖：
 
