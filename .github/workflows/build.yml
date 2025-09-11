@@ -1,0 +1,103 @@
+name: Build minieap for OpenWrt
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target:
+          - name: "MediaTek MT7622 (ImmortalWrt)"
+            sdk_url: "https://downloads.immortalwrt.org/releases/24.10-SNAPSHOT/targets/mediatek/filogic/immortalwrt-sdk-24.10-SNAPSHOT-mediatek-filogic_gcc-13.3.0_musl.Linux-x86_64.tar.zst"
+            sdk_extract: "immortalwrt-sdk-*"
+          - name: "x86_64 (OpenWrt)" 
+            sdk_url: "https://downloads.openwrt.org/snapshots/targets/x86/64/openwrt-sdk-x86-64_gcc-13.3.0_musl.Linux-x86_64.tar.xz"
+            sdk_extract: "openwrt-sdk-*"
+
+    name: Build for ${{ matrix.target.name }}
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Free disk space
+      run: |
+        sudo rm -rf /usr/share/dotnet
+        sudo rm -rf /usr/local/lib/android
+        sudo rm -rf /opt/ghc
+        sudo rm -rf /opt/hostedtoolcache/CodeQL
+        sudo docker image prune --all --force
+        df -h
+
+    - name: Install dependencies
+      run: |
+        sudo apt update -y
+        sudo apt full-upgrade -y
+        sudo apt install -y ack antlr3 asciidoc autoconf automake autopoint binutils bison build-essential \
+          bzip2 ccache clang cmake cpio curl device-tree-compiler ecj fastjar flex gawk gettext gcc-multilib \
+          g++-multilib git gnutls-dev gperf haveged help2man intltool lib32gcc-s1 libc6-dev-i386 libelf-dev \
+          libglib2.0-dev libgmp3-dev libltdl-dev libmpc-dev libmpfr-dev libncurses5-dev libncursesw5 \
+          libncursesw5-dev libpython3-dev libreadline-dev libssl-dev libtool lld llvm lrzsz mkisofs msmtp \
+          nano ninja-build p7zip p7zip-full patch pkgconf python2.7 python3 python3-pip python3-ply \
+          python3-docutils python3-pyelftools qemu-utils re2c rsync scons squashfs-tools subversion swig \
+          texinfo uglifyjs upx-ucl unzip vim wget xmlto xxd zlib1g-dev zstd
+
+    - name: Download and extract SDK
+      run: |
+        echo "Downloading SDK: ${{ matrix.target.sdk_url }}"
+        wget "${{ matrix.target.sdk_url }}"
+        
+        # Extract based on file extension
+        if [[ "${{ matrix.target.sdk_url }}" == *.tar.zst ]]; then
+          tar --zstd -xf *.tar.zst && rm *.tar.zst
+        elif [[ "${{ matrix.target.sdk_url }}" == *.tar.xz ]]; then
+          tar -xf *.tar.xz && rm *.tar.xz
+        fi
+        
+        # Enter SDK directory
+        cd ${{ matrix.target.sdk_extract }}
+        echo "SDK_DIR=$(pwd)" >> $GITHUB_ENV
+        ls -la
+
+    - name: Clone minieap into SDK
+      run: |
+        cd "$SDK_DIR"
+        git clone https://github.com/${{ github.repository }} package/minieap
+        ls -la package/minieap
+
+    - name: Configure build
+      run: |
+        cd "$SDK_DIR"
+        
+        # Update feeds
+        ./scripts/feeds update -a
+        ./scripts/feeds install -a
+        
+        # Create config for minieap
+        echo "CONFIG_PACKAGE_minieap=y" > .config
+        make defconfig
+
+    - name: Build minieap
+      run: |
+        cd "$SDK_DIR"
+        make package/minieap/compile V=s -j$(nproc)
+
+    - name: Find and collect artifacts
+      run: |
+        cd "$SDK_DIR"
+        mkdir -p /tmp/artifacts
+        find . -name "minieap*.ipk" -exec cp {} /tmp/artifacts/ \;
+        ls -la /tmp/artifacts/
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: minieap-${{ matrix.target.name }}-${{ github.sha }}
+        path: /tmp/artifacts/*.ipk
+        if-no-files-found: error
