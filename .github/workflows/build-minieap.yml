@@ -8,16 +8,16 @@ on:
   workflow_dispatch:
     inputs:
       sdk_tag:
-        description: "ImmortalWrt SDK 镜像标签 (例如 ramips-mt7621-24.10.5)"
+        description: "ImmortalWrt SDK 镜像标签 (例如 ramips-mt7621-24.10-SNAPSHOT)"
         required: false
-        default: "ramips-mt7621-24.10.5"
+        default: "ramips-mt7621-24.10-SNAPSHOT"
         type: string
 
 jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      SDK_TAG: ${{ inputs.sdk_tag || 'ramips-mt7621-24.10.5' }}
+      SDK_TAG: ${{ inputs.sdk_tag || 'ramips-mt7621-24.10-SNAPSHOT' }}
 
     steps:
       - name: Checkout repository
