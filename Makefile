@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=minieap
-PKG_VERSION:=master
+PKG_VERSION:=0.94.0
 #PKG_RELEASE:=1
 PKG_MAINTAINER:=Xiao Li <xiaoli3397@gmail.com>
 PKG_LICENSE:=GPLv3
@@ -9,9 +9,9 @@ PKG_LICENSE_FILES:=LICENSE
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/minieap-$(PKG_VERSION)
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_URL:=https://github.com/WeiMXi/minieap-sysu.git
+PKG_SOURCE_URL:=https://github.com/undefined443/minieap-sysu.git
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
-PKG_SOURCE_VERSION:=$(PKG_VERSION)
+PKG_SOURCE_VERSION:=v$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -19,8 +19,8 @@ define Package/$(PKG_NAME)
 	SECTION:=net
 	CATEGORY:=Network
 	TITLE:=Extensible 802.1x client with Ruijie v3 (v4) plugin
-	MAINTAINER:=WeiMXi
-	URL:=https://github.com/WeiMXi/minieap-sysu
+	MAINTAINER:=Xiao Li <xiaoli3397@gmail.com>
+	URL:=https://github.com/undefined443/minieap-sysu
 endef
 
 define Package/$(PKG_NAME)/description
