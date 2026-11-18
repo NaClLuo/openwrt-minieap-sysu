@@ -1,78 +1,52 @@
-name: Build minieap Package
+name: Build MiniEAP Package
 
 on:
   push:
     branches: [ master ]
   pull_request:
     branches: [ master ]
-  workflow_dispatch:  # 允许手动触发
+  workflow_dispatch:
+    inputs:
+      sdk_tag:
+        description: "ImmortalWrt SDK 镜像标签 (例如 ramips-mt7621-24.10.5)"
+        required: false
+        default: "ramips-mt7621-24.10.5"
+        type: string
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        target:
-          - name: "Ramips MT7621"
-            sdk_url: "https://downloads.immortalwrt.org/releases/24.10.2/targets/ramips/mt7621/immortalwrt-sdk-24.10.2-ramips-mt7621_gcc-13.3.0_musl.Linux-x86_64.tar.zst"
-            compression: "zstd"
+    env:
+      SDK_TAG: ${{ inputs.sdk_tag || 'ramips-mt7621-24.10.5' }}
 
     steps:
-      - name: 检出代码库
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: 安装依赖
-        run: |
-          sudo apt update -y
-          sudo apt full-upgrade -y
-          sudo apt install -y ack antlr3 asciidoc autoconf automake autopoint binutils bison build-essential \
-            bzip2 ccache clang cmake cpio curl device-tree-compiler ecj fastjar flex gawk gettext gcc-multilib \
-            g++-multilib git gnutls-dev gperf haveged help2man intltool lib32gcc-s1 libc6-dev-i386 libelf-dev \
-            libglib2.0-dev libgmp3-dev libltdl-dev libmpc-dev libmpfr-dev \
-            libncurses-dev libpython3-dev libreadline-dev libssl-dev libtool lld llvm lrzsz mkisofs msmtp \
-            nano ninja-build p7zip p7zip-full patch pkgconf python3 python3-pip python3-ply \
-            python3-docutils python3-pyelftools qemu-utils re2c rsync scons squashfs-tools subversion swig \
-            texinfo uglifyjs upx-ucl unzip vim wget xmlto xxd zlib1g-dev zstd
-
-      - name: 下载并解压SDK
-        run: |
-          wget ${{ matrix.target.sdk_url }} -O sdk.tar.${{ matrix.target.compression }}
-          if [ "${{ matrix.target.compression }}" = "zstd" ]; then
-            tar --zstd -xf sdk.tar.${{ matrix.target.compression }}
-          else
-            tar -xf sdk.tar.${{ matrix.target.compression }}
-          fi
-          rm sdk.tar.${{ matrix.target.compression }}
-          mv $(find . -maxdepth 1 -name "*sdk*" -type d) sdk
-
-      - name: 设置构建环境
-        working-directory: sdk
-        run: |
-          mkdir -p package/minieap
-          # 复制源代码文件，但排除不需要的目录
-          cp -r $GITHUB_WORKSPACE/[!s]* $GITHUB_WORKSPACE/s[!d]* package/minieap/ 2>/dev/null || true
-          # 确保Makefile和源代码被复制
-          cp -r $GITHUB_WORKSPACE/src package/minieap/ 2>/dev/null || true
-          cp $GITHUB_WORKSPACE/Makefile package/minieap/ 2>/dev/null || true
-          cp $GITHUB_WORKSPACE/CMakeLists.txt package/minieap/ 2>/dev/null || true
-          ./scripts/feeds update -a
-          ./scripts/feeds install -a
-          echo 'CONFIG_PACKAGE_minieap=y' > .config
-          make defconfig
-
-      - name: 编译minieap软件包
-        working-directory: sdk
-        run: |
-          make package/minieap/compile V=s
-
-      - name: 收集编译好的软件包
+      - name: Build minieap with ImmortalWrt SDK Docker
         run: |
           mkdir -p artifacts
-          find sdk/bin -name "minieap*.ipk" -exec cp {} artifacts/ \;
+          chmod 777 artifacts
+          docker run --rm \
+            -v "$GITHUB_WORKSPACE:/pkg:ro" \
+            -v "$GITHUB_WORKSPACE/artifacts:/artifacts" \
+            "immortalwrt/sdk:${SDK_TAG}" \
+            bash -ce '
+              [ ! -f setup.sh ] || bash setup.sh
+              mkdir -p package/minieap
+              cp -r /pkg/Makefile /pkg/LICENSE /pkg/files package/minieap/
+              echo "CONFIG_PACKAGE_minieap=m" >> .config
+              make defconfig
+              make package/minieap/compile V=s
+              find bin/packages -type f -name "minieap*" -exec cp -v {} /artifacts/ \;
+            '
+          ls -lh artifacts/
+          test -n "$(ls -A artifacts/)"
 
-      - name: 上传构建产物
+      - name: Upload package artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: minieap-${{ matrix.target.name }}
+          name: minieap-${{ env.SDK_TAG }}
           path: artifacts/
-          retention-days: 7
+          if-no-files-found: error
+          retention-days: 30
