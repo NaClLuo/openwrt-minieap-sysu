@@ -1,0 +1,63 @@
+name: Build MiniEAP Static Binary (Padavan)
+
+on:
+  push:
+    branches: [ master ]
+  workflow_dispatch:
+
+jobs:
+  build-static:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Clone minieap-sysu source
+        run: git clone --depth 1 https://github.com/undefined443/minieap-sysu.git minieap-src
+
+      - name: Download musl cross toolchain
+        run: |
+          wget -q https://musl.cc/mipsel-linux-musl-cross.tgz
+          tar xf mipsel-linux-musl-cross.tgz
+          echo "$PWD/mipsel-linux-musl-cross/bin" >> $GITHUB_PATH
+
+      - name: Configure for static cross-compilation
+        working-directory: minieap-src
+        run: |
+          sed -i 's|^CC := gcc|CC := mipsel-linux-musl-gcc|' config.mk
+          sed -i 's|^STATIC_BUILD  := false|STATIC_BUILD  := true|' config.mk
+          echo "--- Final config.mk ---"
+          cat config.mk
+
+      - name: Build
+        working-directory: minieap-src
+        run: make -j$(nproc)
+
+      - name: Strip and verify
+        working-directory: minieap-src
+        run: |
+          mipsel-linux-musl-strip --strip-all minieap
+          echo "=== file ==="
+          file minieap
+          echo "=== size ==="
+          ls -lh minieap
+          echo "=== ELF headers ==="
+          readelf -l minieap | head -20
+          if readelf -l minieap | grep -q "INTERP"; then
+            echo "::error::Binary is NOT statically linked!"
+            exit 1
+          fi
+          echo "✅ Confirmed: fully static ELF binary"
+
+      - name: Prepare artifacts
+        run: |
+          mkdir -p output
+          cp minieap-src/minieap output/minieap
+          cp minieap-src/minieap.conf output/minieap.conf
+          echo "=== Build artifacts ==="
+          ls -lh output/
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: minieap-sysu-mipsel-static
+          path: output/
+          retention-days: 90
