@@ -13,16 +13,15 @@ jobs:
       - name: Clone minieap-sysu source
         run: git clone --depth 1 https://github.com/undefined443/minieap-sysu.git minieap-src
 
-      - name: Download musl cross toolchain
+      - name: Download musl cross toolchain from release
         shell: bash
         run: |
           set -euo pipefail
-          URL="https://musl.cc/mipsel-linux-musl-cross.tgz"
+          URL="https://github.com/NaClLuo/openwrt-minieap-sysu/releases/download/toolchain-v1/mipsel-linux-musl-cross.tgz"
           echo "Downloading $URL ..."
           curl -fL -4 -sS \
-            --retry 5 --retry-delay 2 --retry-connrefused --retry-all-errors \
-            --connect-timeout 15 \
-            -A "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36" \
+            --retry 5 --retry-delay 2 --retry-all-errors \
+            --connect-timeout 30 \
             -o mipsel-linux-musl-cross.tgz \
             "$URL"
           echo "Downloaded $(stat -c%s mipsel-linux-musl-cross.tgz) bytes"
